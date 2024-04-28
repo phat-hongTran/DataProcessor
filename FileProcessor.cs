@@ -18,6 +18,9 @@ namespace DataProcessor
                 WriteLine($"ERROR: file {InputFilePath} not found");
                 return;
             }
+
+            var rootDirectoryPath = new DirectoryInfo(InputFilePath).Parent.Parent.FullName;
+            WriteLine($"Root data path is {rootDirectoryPath}");
         }
     }
 }
