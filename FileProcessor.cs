@@ -39,6 +39,52 @@ namespace DataProcessor
             var backupFilePath = Path.Combine(backupDirectoryPath, inputFileName);
             WriteLine($"Copying {InputFilePath} to {backupFilePath}");
             File.Copy(InputFilePath, backupFilePath, true);
+
+            // Move to in progress directory
+            Directory.CreateDirectory(Path.Combine(rootDirectoryPath, InProgressDirectoryName));
+            var inProgressFilePath = Path.Combine(rootDirectoryPath, InProgressDirectoryName, inputFileName);
+
+            if (File.Exists(inProgressFilePath))
+            {
+                WriteLine($"ERROR: a file with the name {inProgressFilePath} is already being processed");
+                return;
+            }
+            WriteLine($"Moving {InputFilePath} to {inProgressFilePath}");
+            File.Move(InputFilePath, inProgressFilePath);
+
+            // Determine type of file
+            var fileExtension = Path.GetExtension(InputFilePath);
+
+            switch (fileExtension)
+            {
+                case ".txt":
+                    ProcessTextFile(inProgressFilePath);
+                    break;
+                default:
+                    WriteLine($"{fileExtension} is not a supported file type");
+                    break;
+            }
+
+            // Move file after processing to complete directory
+            var completeDirectoryPath = Path.Combine(rootDirectoryPath, CompleteDirectoryName);
+            Directory.CreateDirectory(completeDirectoryPath);
+            WriteLine($"Moving {inProgressFilePath} to {completeDirectoryPath}");
+            //File.Move(inProgressFilePath, Path.Combine(completeDirectoryPath, inputFileName));
+
+            var completedFileName = $"{Path.GetFileNameWithoutExtension(InputFilePath)}-{Guid.NewGuid()}{fileExtension}";
+
+            //completedFileName = Path.ChangeExtension(completedFileName, ".complete");   
+
+            var completedFilePath = Path.Combine(completeDirectoryPath, completedFileName);
+
+            File.Move(inProgressFilePath, completedFilePath);
+        }
+
+        private void ProcessTextFile(string inprogressFilePath)
+        {
+            WriteLine($"Processing text file {inprogressFilePath}");
+
+            // Read in and process
         }
     }
 }
