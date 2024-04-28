@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using static System.Console;
 
 namespace DataProcessor
@@ -14,6 +15,14 @@ namespace DataProcessor
             if (command == "--file")
             {
                 var filePath = args[1];
+
+                // Check if path is fully qualified
+                if (!Path.IsPathFullyQualified(filePath))
+                {
+                    WriteLine($"ERROR: Path '{filePath}' must be fully qualified");
+                    ReadLine();
+                    return;
+                }
                 WriteLine($"Single file {filePath} selected");
                 ProcessSingleFile(filePath);
             }
