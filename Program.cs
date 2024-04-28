@@ -47,6 +47,20 @@ namespace DataProcessor
 
         private static void ProcessDirectory(string directoryPath, string fileType)
         {
+            switch (fileType)
+            {
+                case "TEXT":
+                    string[] textFiles = Directory.GetFiles(directoryPath, "*.txt");
+                    foreach (var textFile in textFiles)
+                    {
+                        var fileProcessor = new FileProcessor(textFile);
+                        fileProcessor.Process();
+                    }
+                    break;
+                default:
+                    WriteLine($"ERROR: Unsupported file type {fileType}");
+                    break;
+            }
         }
     }
 }

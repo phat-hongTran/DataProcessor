@@ -78,6 +78,10 @@ namespace DataProcessor
             var completedFilePath = Path.Combine(completeDirectoryPath, completedFileName);
 
             File.Move(inProgressFilePath, completedFilePath);
+
+            // Delete in progress directory
+            var inprogressDirectoryPath = Path.GetDirectoryName(inProgressFilePath);
+            Directory.Delete(inprogressDirectoryPath, true);
         }
 
         private void ProcessTextFile(string inprogressFilePath)

@@ -2,7 +2,7 @@
   "profiles": {
     "DataProcessor": {
       "commandName": "Project",
-      "commandLineArgs": "--file \"D:\\2. Personal\\0. Learning\\DataProcessor\\psdata\\in\\data1.txt\""
+      "commandLineArgs": "--dir \"D:\\2. Personal\\0. Learning\\DataProcessor\\psdata\\in\" TEXT"
     }
   }
 }
