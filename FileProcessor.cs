@@ -81,7 +81,7 @@ namespace DataProcessor
 
             // Delete in progress directory
             var inprogressDirectoryPath = Path.GetDirectoryName(inProgressFilePath);
-            Directory.Delete(inprogressDirectoryPath, true);
+            //Directory.Delete(inprogressDirectoryPath, true);
         }
 
         private void ProcessTextFile(string inprogressFilePath)

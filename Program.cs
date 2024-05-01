@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.IO;
+using System.Runtime.Caching;
 using System.Threading;
 using static System.Console;
 
@@ -8,7 +9,7 @@ namespace DataProcessor
 {
     internal class Program
     {
-        private static ConcurrentDictionary<string,string> FileToProcess = new ConcurrentDictionary<string, string>();
+        private static MemoryCache FileToProcess = MemoryCache.Default;
         static void Main(string[] args)
         {
             WriteLine("Parsing command line options");
@@ -24,7 +25,6 @@ namespace DataProcessor
                 WriteLine($"Watching directory {directoryToWatch} for changes");
 
                 using var inputFileWatcher = new FileSystemWatcher(directoryToWatch);
-                using var timer = new Timer(state => ProcessFiles(), null, 0, 1000);
 
                 inputFileWatcher.IncludeSubdirectories = false;
                 inputFileWatcher.InternalBufferSize = 32768; // 32 KB
@@ -63,14 +63,14 @@ namespace DataProcessor
         {
             WriteLine($"File changed: {e.Name} - type: {e.ChangeType}");
 
-            FileToProcess.TryAdd(e.FullPath,e.FullPath);
+            AddToCache(e.FullPath);
         }
 
         private static void FileCreated(object sender, FileSystemEventArgs e)
         {
             WriteLine($"File created: {e.Name} - type: {e.ChangeType}");
 
-            FileToProcess.TryAdd(e.FullPath, e.FullPath);
+            AddToCache(e.FullPath);
         }
 
         private static void ProcessSingleFile(string filePath)
@@ -99,14 +99,41 @@ namespace DataProcessor
 
         private static void ProcessFiles()
         {
-            foreach (var file in FileToProcess.Keys)
-            {
-                if (FileToProcess.TryRemove(file, out _))
-                {
-                    var fileProcessor = new FileProcessor(file);
-                    fileProcessor.Process();
-                }
-            }
+            //foreach (var file in FileToProcess.Keys)
+            //{
+            //    if (FileToProcess.TryRemove(file, out _))
+            //    {
+            //        var fileProcessor = new FileProcessor(file);
+            //        fileProcessor.Process();
+            //    }
+            //}
         }   
+
+        private static void AddToCache(string fullPath)
+        {
+            var item = new CacheItem(fullPath, fullPath);
+            var policy = new CacheItemPolicy
+            {
+                RemovedCallback = ProcessFile,
+                SlidingExpiration = TimeSpan.FromSeconds(2)
+            };
+
+            FileToProcess.Add(item, policy);
+        }
+
+        private static void ProcessFile(CacheEntryRemovedArguments args)
+        {
+            WriteLine($"* Cache item removed: {args.CacheItem.Key} because {args.RemovedReason}");
+
+            if (args.RemovedReason == CacheEntryRemovedReason.Expired)
+            {
+                var fileProcessor = new FileProcessor(args.CacheItem.Key);
+                fileProcessor.Process();
+            }
+            else
+            {
+                WriteLine($"WARNING: {args.CacheItem.Key} was removed unexpectedly and may not have been processed");
+            }
+        }
     }
 }
