@@ -1,11 +1,14 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.IO;
+using System.Threading;
 using static System.Console;
 
 namespace DataProcessor
 {
     internal class Program
     {
+        private static ConcurrentDictionary<string,string> FileToProcess = new ConcurrentDictionary<string, string>();
         static void Main(string[] args)
         {
             WriteLine("Parsing command line options");
@@ -21,6 +24,7 @@ namespace DataProcessor
                 WriteLine($"Watching directory {directoryToWatch} for changes");
 
                 using var inputFileWatcher = new FileSystemWatcher(directoryToWatch);
+                using var timer = new Timer(state => ProcessFiles(), null, 0, 1000);
 
                 inputFileWatcher.IncludeSubdirectories = false;
                 inputFileWatcher.InternalBufferSize = 32768; // 32 KB
@@ -58,11 +62,15 @@ namespace DataProcessor
         private static void FileChanged(object sender, FileSystemEventArgs e)
         {
             WriteLine($"File changed: {e.Name} - type: {e.ChangeType}");
+
+            FileToProcess.TryAdd(e.FullPath,e.FullPath);
         }
 
         private static void FileCreated(object sender, FileSystemEventArgs e)
         {
             WriteLine($"File created: {e.Name} - type: {e.ChangeType}");
+
+            FileToProcess.TryAdd(e.FullPath, e.FullPath);
         }
 
         private static void ProcessSingleFile(string filePath)
@@ -88,5 +96,17 @@ namespace DataProcessor
                     break;
             }
         }
+
+        private static void ProcessFiles()
+        {
+            foreach (var file in FileToProcess.Keys)
+            {
+                if (FileToProcess.TryRemove(file, out _))
+                {
+                    var fileProcessor = new FileProcessor(file);
+                    fileProcessor.Process();
+                }
+            }
+        }   
     }
 }
